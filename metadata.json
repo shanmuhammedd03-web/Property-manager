@@ -1,0 +1,6 @@
+{
+  "name": "Property Booking",
+  "description": "A simple native Android app for property booking management with offline Room storage and Google Calendar integration.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
