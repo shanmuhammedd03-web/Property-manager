@@ -12,12 +12,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Dashboard
 import androidx.compose.material.icons.filled.EventAvailable
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.ListAlt
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -25,7 +22,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -97,40 +93,11 @@ fun MainAppContent(viewModel: PropertyBookingViewModel) {
     var prefillStartTime by remember { mutableStateOf<String?>(null) }
     var prefillEndTime by remember { mutableStateOf<String?>(null) }
 
-    // APK build instructions dialog
-    var showApkInstructions by remember { mutableStateOf(false) }
-
     // Collect user notification / snackbar messages
     LaunchedEffect(Unit) {
         viewModel.userMessage.collect { message ->
             snackbarHostState.showSnackbar(message)
         }
-    }
-
-    if (showApkInstructions) {
-        AlertDialog(
-            onDismissRequest = { showApkInstructions = false },
-            title = { Text("How to Build Standalone APK") },
-            text = {
-                Text(
-                    "To generate a standalone APK ready for any Android device:\n\n" +
-                            "Method 1 (Android Studio):\n" +
-                            "1. Open project in Android Studio.\n" +
-                            "2. Go to Menu: Build > Build Bundle(s) / APK(s) > Build APK(s).\n" +
-                            "3. Click 'locate' in notification to find 'app-debug.apk'.\n\n" +
-                            "Method 2 (Command Line / Terminal):\n" +
-                            "Run: ./gradlew assembleDebug\n" +
-                            "Output file: app/build/outputs/apk/debug/app-debug.apk\n\n" +
-                            "Method 3 (AI Studio Export):\n" +
-                            "Export as ZIP from the top bar settings menu or generate APK directly."
-                )
-            },
-            confirmButton = {
-                TextButton(onClick = { showApkInstructions = false }) {
-                    Text("Got it")
-                }
-            }
-        )
     }
 
     // Booking Dialog (Add / Edit)
@@ -183,17 +150,6 @@ fun MainAppContent(viewModel: PropertyBookingViewModel) {
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.titleLarge
                     )
-                },
-                actions = {
-                    IconButton(
-                        onClick = { showApkInstructions = true },
-                        modifier = Modifier.testTag("btn_apk_instructions")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "APK Build Instructions"
-                        )
-                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background,
