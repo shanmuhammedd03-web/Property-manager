@@ -26,9 +26,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import com.example.data.model.Property
 
 @Composable
@@ -37,6 +40,9 @@ fun PropertyDialog(
     onDismiss: () -> Unit,
     onConfirm: (name: String, note: String) -> Unit
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     var name by remember { mutableStateOf(propertyToEdit?.name ?: "") }
     var note by remember { mutableStateOf(propertyToEdit?.note ?: "") }
     var hasAttemptedSubmit by remember { mutableStateOf(false) }
@@ -44,7 +50,15 @@ fun PropertyDialog(
     val isNameError = hasAttemptedSubmit && name.isBlank()
 
     AlertDialog(
-        onDismissRequest = onDismiss,
+        onDismissRequest = {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+            onDismiss()
+        },
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        ),
         title = {
             Text(
                 text = if (propertyToEdit == null) "Add New Property" else "Edit Property",
@@ -124,6 +138,8 @@ fun PropertyDialog(
                 onClick = {
                     hasAttemptedSubmit = true
                     if (name.isNotBlank()) {
+                        focusManager.clearFocus()
+                        keyboardController?.hide()
                         onConfirm(name.trim(), note.trim())
                     }
                 },
@@ -134,7 +150,11 @@ fun PropertyDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss,
+                onClick = {
+                    focusManager.clearFocus()
+                    keyboardController?.hide()
+                    onDismiss()
+                },
                 modifier = Modifier.testTag("cancel_property_button")
             ) {
                 Text("Cancel")

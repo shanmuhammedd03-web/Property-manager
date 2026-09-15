@@ -65,7 +65,7 @@ class PropertyBookingViewModel(
     val dashboardStats: StateFlow<DashboardStats> = combine(properties, allBookings) { propList, bookList ->
         val todayStr = DateTimeUtils.getTodayDate()
         val todayList = bookList.filter { it.bookingDate == todayStr }
-        val upcomingList = bookList.filter { it.bookingDate >= todayStr }
+        val upcomingList = bookList.filter { it.bookingDate > todayStr }
 
         var total = 0.0
         var paid = 0.0

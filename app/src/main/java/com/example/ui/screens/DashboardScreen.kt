@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,14 +28,15 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.HourglassBottom
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material3.Button
-import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.data.model.BookingItem
@@ -72,13 +75,12 @@ fun DashboardScreen(
     LazyColumn(
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 16.dp)
             .testTag("dashboard_screen"),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // Top Header
         item {
-            Spacer(modifier = Modifier.height(8.dp))
-            // Dashboard Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -109,94 +111,19 @@ fun DashboardScreen(
             }
         }
 
-        // 1. Property and Bookings Count Summary (Row 1)
+        // Unified Compact Overview Table for Every Device
         item {
-            Text(
-                text = "Activity & Inventory",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            Column {
+                Text(
+                    text = "Summary Overview",
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                StatCard(
-                    title = "Total Properties",
-                    value = stats.totalProperties.toString(),
-                    icon = Icons.Default.Home,
-                    iconBgColor = MaterialTheme.colorScheme.primaryContainer,
-                    iconTint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_total_properties")
-                )
-                StatCard(
-                    title = "Today's Bookings",
-                    value = stats.todayBookingsCount.toString(),
-                    icon = Icons.Default.CalendarToday,
-                    iconBgColor = MaterialTheme.colorScheme.secondaryContainer,
-                    iconTint = MaterialTheme.colorScheme.secondary,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_today_bookings")
-                )
-                StatCard(
-                    title = "Upcoming",
-                    value = stats.upcomingBookingsCount.toString(),
-                    icon = Icons.Default.DateRange,
-                    iconBgColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    iconTint = MaterialTheme.colorScheme.tertiary,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_upcoming_bookings")
-                )
-            }
-        }
-
-        // 2. Financial Metrics (Row 2): Total Amount, Paid Amount, Unpaid Amount
-        item {
-            Text(
-                text = "Financial Summary",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                FinanceStatCard(
-                    label = "Total Amount",
-                    amount = stats.totalAmount,
-                    color = MaterialTheme.colorScheme.primary,
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    icon = Icons.Default.AttachMoney,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_total_amount")
-                )
-                FinanceStatCard(
-                    label = "Paid Amount",
-                    amount = stats.paidAmount,
-                    color = PaidGreen,
-                    containerColor = PaidGreenContainer,
-                    icon = Icons.Default.CheckCircle,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_paid_amount")
-                )
-                FinanceStatCard(
-                    label = "Unpaid Amount",
-                    amount = stats.unpaidAmount,
-                    color = UnpaidOrange,
-                    containerColor = UnpaidOrangeContainer,
-                    icon = Icons.Default.HourglassBottom,
-                    modifier = Modifier
-                        .weight(1f)
-                        .testTag("stat_unpaid_amount")
+                DashboardCompactTable(
+                    stats = stats,
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         }
@@ -266,13 +193,13 @@ fun DashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = null,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -285,7 +212,7 @@ fun DashboardScreen(
                 }
             }
         } else {
-            items(stats.todayBookings, key = { it.id }) { booking ->
+            items(stats.todayBookings, key = { "today_${it.id}" }) { booking ->
                 BookingCard(
                     booking = booking,
                     onEdit = onEditBooking,
@@ -297,7 +224,7 @@ fun DashboardScreen(
 
         // Upcoming Bookings Section
         item {
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Upcoming Bookings (${stats.upcomingBookings.size})",
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
@@ -314,13 +241,13 @@ fun DashboardScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(24.dp),
+                            .padding(20.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Icon(
                             imageVector = Icons.Default.DateRange,
                             contentDescription = null,
-                            modifier = Modifier.size(36.dp),
+                            modifier = Modifier.size(32.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(8.dp))
@@ -333,7 +260,7 @@ fun DashboardScreen(
                 }
             }
         } else {
-            items(stats.upcomingBookings.take(5), key = { it.id }) { booking ->
+            items(stats.upcomingBookings.take(8), key = { "upcoming_${it.id}" }) { booking ->
                 BookingCard(
                     booking = booking,
                     onEdit = onEditBooking,
@@ -342,86 +269,229 @@ fun DashboardScreen(
                 )
             }
         }
-
-        item {
-            Spacer(modifier = Modifier.height(80.dp)) // padding for bottom bar
-        }
     }
 }
 
+/**
+ * Compact, unified table card that arranges activity counts and financial figures
+ * cleanly for every device screen size without awkward text clipping or wrapping.
+ */
 @Composable
-private fun StatCard(
-    title: String,
-    value: String,
-    icon: ImageVector,
-    iconBgColor: Color,
-    iconTint: Color,
+private fun DashboardCompactTable(
+    stats: DashboardStats,
     modifier: Modifier = Modifier
 ) {
     ElevatedCard(
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.elevatedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+        modifier = modifier.testTag("dashboard_compact_table"),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Box(
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(iconBgColor),
-                contentAlignment = Alignment.Center
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp)
+        ) {
+            // Row 1: Activity Metrics (Properties, Today's Bookings, Upcoming)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(imageVector = icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(18.dp))
+                CompactMetricItem(
+                    label = "Properties",
+                    value = stats.totalProperties.toString(),
+                    icon = Icons.Default.Home,
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    iconBg = MaterialTheme.colorScheme.primaryContainer,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_total_properties")
+                )
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                CompactMetricItem(
+                    label = "Today",
+                    value = stats.todayBookingsCount.toString(),
+                    icon = Icons.Default.CalendarToday,
+                    iconTint = MaterialTheme.colorScheme.secondary,
+                    iconBg = MaterialTheme.colorScheme.secondaryContainer,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_today_bookings")
+                )
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                CompactMetricItem(
+                    label = "Upcoming",
+                    value = stats.upcomingBookingsCount.toString(),
+                    icon = Icons.Default.DateRange,
+                    iconTint = MaterialTheme.colorScheme.tertiary,
+                    iconBg = MaterialTheme.colorScheme.tertiaryContainer,
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_upcoming_bookings")
+                )
             }
+
             Spacer(modifier = Modifier.height(10.dp))
-            Text(
-                text = value,
-                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1
-            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Row 2: Financial Metrics (Total Amount, Paid, Unpaid)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CompactFinanceItem(
+                    label = "Total Amount",
+                    amount = stats.totalAmount,
+                    icon = Icons.Default.AttachMoney,
+                    color = MaterialTheme.colorScheme.primary,
+                    containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_total_amount")
+                )
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                CompactFinanceItem(
+                    label = "Paid Amount",
+                    amount = stats.paidAmount,
+                    icon = Icons.Default.CheckCircle,
+                    color = PaidGreen,
+                    containerColor = PaidGreenContainer.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_paid_amount")
+                )
+
+                VerticalDivider(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .padding(horizontal = 4.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+
+                CompactFinanceItem(
+                    label = "Unpaid Amount",
+                    amount = stats.unpaidAmount,
+                    icon = Icons.Default.HourglassBottom,
+                    color = UnpaidOrange,
+                    containerColor = UnpaidOrangeContainer.copy(alpha = 0.7f),
+                    modifier = Modifier
+                        .weight(1f)
+                        .testTag("stat_unpaid_amount")
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun FinanceStatCard(
+private fun CompactMetricItem(
     label: String,
-    amount: Double,
-    color: Color,
-    containerColor: Color,
+    value: String,
     icon: ImageVector,
+    iconTint: Color,
+    iconBg: Color,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+    Column(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(modifier = Modifier.padding(12.dp)) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(iconBg),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = iconTint,
+                modifier = Modifier.size(16.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onSurface,
+            textAlign = TextAlign.Center
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+    }
+}
+
+@Composable
+private fun CompactFinanceItem(
+    label: String,
+    amount: Double,
+    icon: ImageVector,
+    color: Color,
+    containerColor: Color,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(vertical = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(CircleShape)
+                .background(containerColor),
+            contentAlignment = Alignment.Center
+        ) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
                 tint = color,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "\$${String.format(Locale.US, "%.0f", amount)}",
-                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.ExtraBold),
-                color = color
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Medium),
-                color = color.copy(alpha = 0.85f),
-                maxLines = 1
+                modifier = Modifier.size(16.dp)
             )
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = "\$${String.format(Locale.US, "%.0f", amount)}",
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.ExtraBold),
+            color = color,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+            maxLines = 1
+        )
     }
 }
