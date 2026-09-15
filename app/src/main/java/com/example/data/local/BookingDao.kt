@@ -14,7 +14,8 @@ import kotlinx.coroutines.flow.Flow
 interface BookingDao {
     @Query("""
         SELECT b.id, b.propertyId, COALESCE(p.name, 'Unknown Property') AS propertyName, 
-               b.customerName, b.bookingDate, b.startTime, b.endTime, b.amount, b.isPaid, b.createdAt
+               b.customerName, b.bookingDate, b.startTime, b.endTime, b.amount, b.isPaid, 
+               COALESCE(b.notes, '') AS notes, b.createdAt
         FROM bookings b
         LEFT JOIN properties p ON b.propertyId = p.id
         ORDER BY b.bookingDate ASC, b.startTime ASC

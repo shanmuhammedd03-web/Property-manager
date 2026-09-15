@@ -8,7 +8,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.Booking
 import com.example.data.model.Property
 
-@Database(entities = [Property::class, Booking::class], version = 1, exportSchema = false)
+@Database(entities = [Property::class, Booking::class], version = 2, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun propertyDao(): PropertyDao
     abstract fun bookingDao(): BookingDao

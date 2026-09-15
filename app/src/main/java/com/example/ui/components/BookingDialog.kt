@@ -1,10 +1,7 @@
 package com.example.ui.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,7 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -57,7 +54,7 @@ import com.example.ui.theme.UnpaidOrangeContainer
 import com.example.util.DateTimeUtils
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BookingDialog(
     properties: List<Property>,
@@ -75,7 +72,9 @@ fun BookingDialog(
         startTime: String,
         endTime: String,
         amount: Double,
-        isPaid: Boolean
+        isPaid: Boolean,
+        notes: String,
+        onError: (String) -> Unit
     ) -> Unit
 ) {
     var selectedPropertyId by remember {
@@ -114,9 +113,26 @@ fun BookingDialog(
         )
     }
     var isPaid by remember { mutableStateOf(bookingToEdit?.isPaid ?: false) }
+    var notes by remember { mutableStateOf(bookingToEdit?.notes ?: "") }
 
     var propertyDropdownExpanded by remember { mutableStateOf(false) }
+
+    // Validation error states for clear screen display
     var validationError by remember { mutableStateOf<String?>(null) }
+    var customerNameError by remember { mutableStateOf<String?>(null) }
+    var dateError by remember { mutableStateOf<String?>(null) }
+    var startTimeError by remember { mutableStateOf<String?>(null) }
+    var endTimeError by remember { mutableStateOf<String?>(null) }
+    var amountError by remember { mutableStateOf<String?>(null) }
+
+    fun clearErrors() {
+        validationError = null
+        customerNameError = null
+        dateError = null
+        startTimeError = null
+        endTimeError = null
+        amountError = null
+    }
 
     // If properties were not loaded yet on open, set when loaded
     LaunchedEffect(properties) {
@@ -132,7 +148,7 @@ fun BookingDialog(
         title = {
             Text(
                 text = if (bookingToEdit == null) "New Booking" else "Edit Booking",
-                style = MaterialTheme.typography.titleLarge
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
             )
         },
         text = {
@@ -141,6 +157,35 @@ fun BookingDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState())
             ) {
+                // Top Prominent Error Banner
+                if (validationError != null) {
+                    Surface(
+                        color = MaterialTheme.colorScheme.errorContainer,
+                        shape = RoundedCornerShape(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 14.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ErrorOutline,
+                                contentDescription = "Error",
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(22.dp)
+                            )
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Text(
+                                text = validationError ?: "",
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                        }
+                    }
+                }
+
                 if (properties.isEmpty()) {
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
@@ -190,6 +235,7 @@ fun BookingDialog(
                                 onClick = {
                                     selectedPropertyId = prop.id
                                     propertyDropdownExpanded = false
+                                    clearErrors()
                                 }
                             )
                         }
@@ -203,11 +249,16 @@ fun BookingDialog(
                     value = customerName,
                     onValueChange = {
                         customerName = it
-                        validationError = null
+                        customerNameError = null
+                        if (validationError != null) validationError = null
                     },
                     label = { Text("Customer Name *") },
                     placeholder = { Text("e.g., John Doe") },
                     singleLine = true,
+                    isError = customerNameError != null,
+                    supportingText = if (customerNameError != null) {
+                        { Text(customerNameError!!, color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("booking_customer_name_input"),
@@ -228,7 +279,8 @@ fun BookingDialog(
                     value = bookingDate,
                     onValueChange = {
                         bookingDate = it.trim()
-                        validationError = null
+                        dateError = null
+                        if (validationError != null) validationError = null
                     },
                     label = { Text("Booking Date") },
                     placeholder = { Text("YYYY-MM-DD") },
@@ -236,6 +288,10 @@ fun BookingDialog(
                         Icon(imageVector = Icons.Default.CalendarMonth, contentDescription = null)
                     },
                     singleLine = true,
+                    isError = dateError != null,
+                    supportingText = if (dateError != null) {
+                        { Text(dateError!!, color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("booking_date_input"),
@@ -250,19 +306,27 @@ fun BookingDialog(
 
                     FilterChip(
                         selected = bookingDate == today,
-                        onClick = { bookingDate = today },
+                        onClick = {
+                            bookingDate = today
+                            dateError = null
+                            if (validationError != null) validationError = null
+                        },
                         label = { Text("Today") }
                     )
                     FilterChip(
                         selected = bookingDate == tomorrow,
-                        onClick = { bookingDate = tomorrow },
+                        onClick = {
+                            bookingDate = tomorrow
+                            dateError = null
+                            if (validationError != null) validationError = null
+                        },
                         label = { Text("Tomorrow") }
                     )
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // 4. Start & End Time
+                // 4. Start & End Time (No QP presets - clean start and end time only)
                 Text(
                     text = "Booking Times (24-Hour HH:mm) *",
                     style = MaterialTheme.typography.labelLarge,
@@ -278,10 +342,15 @@ fun BookingDialog(
                         value = startTime,
                         onValueChange = {
                             startTime = it.trim()
-                            validationError = null
+                            startTimeError = null
+                            if (validationError != null) validationError = null
                         },
                         label = { Text("Start Time") },
                         placeholder = { Text("10:00") },
+                        isError = startTimeError != null,
+                        supportingText = if (startTimeError != null) {
+                            { Text(startTimeError!!, color = MaterialTheme.colorScheme.error) }
+                        } else null,
                         modifier = Modifier
                             .weight(1f)
                             .testTag("booking_start_time_input"),
@@ -292,48 +361,21 @@ fun BookingDialog(
                         value = endTime,
                         onValueChange = {
                             endTime = it.trim()
-                            validationError = null
+                            endTimeError = null
+                            if (validationError != null) validationError = null
                         },
                         label = { Text("End Time") },
                         placeholder = { Text("12:00") },
+                        isError = endTimeError != null,
+                        supportingText = if (endTimeError != null) {
+                            { Text(endTimeError!!, color = MaterialTheme.colorScheme.error) }
+                        } else null,
                         modifier = Modifier
                             .weight(1f)
                             .testTag("booking_end_time_input"),
                         shape = RoundedCornerShape(12.dp),
                         singleLine = true
                     )
-                }
-
-                // Quick common time presets
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Quick Presets:",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val presets = listOf(
-                        "09:00" to "11:00",
-                        "10:00" to "12:00",
-                        "12:00" to "14:00",
-                        "14:00" to "16:00",
-                        "16:00" to "18:00",
-                        "18:00" to "20:00"
-                    )
-                    presets.forEach { (s, e) ->
-                        FilterChip(
-                            selected = startTime == s && endTime == e,
-                            onClick = {
-                                startTime = s
-                                endTime = e
-                            },
-                            label = { Text("$s - $e", style = MaterialTheme.typography.labelSmall) }
-                        )
-                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -343,12 +385,17 @@ fun BookingDialog(
                     value = amountText,
                     onValueChange = {
                         amountText = it
-                        validationError = null
+                        amountError = null
+                        if (validationError != null) validationError = null
                     },
                     label = { Text("Booking Amount ($) *") },
                     placeholder = { Text("100.00") },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     singleLine = true,
+                    isError = amountError != null,
+                    supportingText = if (amountError != null) {
+                        { Text(amountError!!, color = MaterialTheme.colorScheme.error) }
+                    } else null,
                     modifier = Modifier
                         .fillMaxWidth()
                         .testTag("booking_amount_input"),
@@ -401,12 +448,35 @@ fun BookingDialog(
                     )
                 }
 
-                // Error / Overlap message banner
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // 7. Additional Information (Optional Text Area)
+                Text(
+                    text = "Additional Information (Optional)",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+
+                OutlinedTextField(
+                    value = notes,
+                    onValueChange = { notes = it },
+                    label = { Text("Notes / Special Requests") },
+                    placeholder = { Text("Add any extra notes, customer requests, or special details here...") },
+                    minLines = 3,
+                    maxLines = 5,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag("booking_notes_input"),
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Bottom Error banner if present
                 if (validationError != null) {
                     Spacer(modifier = Modifier.height(16.dp))
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         Row(
@@ -422,7 +492,7 @@ fun BookingDialog(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = validationError ?: "",
-                                style = MaterialTheme.typography.bodySmall,
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                         }
@@ -433,43 +503,62 @@ fun BookingDialog(
         confirmButton = {
             Button(
                 onClick = {
+                    clearErrors()
+
+                    var hasError = false
+
                     if (selectedPropertyId <= 0L) {
-                        validationError = "Please select a property."
-                        return@Button
+                        validationError = "Please select a property from the dropdown."
+                        hasError = true
                     }
                     if (customerName.isBlank()) {
-                        validationError = "Customer name cannot be empty."
-                        return@Button
+                        customerNameError = "Customer name is required"
+                        if (validationError == null) validationError = "Customer name cannot be empty."
+                        hasError = true
                     }
                     if (bookingDate.isBlank()) {
-                        validationError = "Please enter a valid date (YYYY-MM-DD)."
-                        return@Button
+                        dateError = "Booking date is required"
+                        if (validationError == null) validationError = "Please enter a valid date (YYYY-MM-DD)."
+                        hasError = true
+                    } else {
+                        val dateRegex = Regex("""^\d{4}-\d{1,2}-\d{1,2}$""")
+                        if (!bookingDate.matches(dateRegex)) {
+                            dateError = "Format must be YYYY-MM-DD"
+                            if (validationError == null) validationError = "Please enter date in YYYY-MM-DD format."
+                            hasError = true
+                        }
                     }
-                    val dateRegex = Regex("""^\d{4}-\d{1,2}-\d{1,2}$""")
-                    if (!bookingDate.matches(dateRegex)) {
-                        validationError = "Please enter date in YYYY-MM-DD format."
-                        return@Button
-                    }
+
                     val timeRegex = Regex("""^([01]?[0-9]|2[0-3]):[0-5][0-9]$""")
                     if (!startTime.matches(timeRegex)) {
-                        validationError = "Start time must be in HH:mm format (e.g. 10:00)."
-                        return@Button
+                        startTimeError = "Time must be HH:mm (e.g. 10:00)"
+                        if (validationError == null) validationError = "Start time must be in 24-hour HH:mm format."
+                        hasError = true
                     }
                     if (!endTime.matches(timeRegex)) {
-                        validationError = "End time must be in HH:mm format (e.g. 12:00)."
-                        return@Button
+                        endTimeError = "Time must be HH:mm (e.g. 12:00)"
+                        if (validationError == null) validationError = "End time must be in 24-hour HH:mm format."
+                        hasError = true
                     }
-                    val sMin = DateTimeUtils.timeToMinutes(startTime)
-                    val eMin = DateTimeUtils.timeToMinutes(endTime)
-                    if (eMin <= sMin) {
-                        validationError = "End time must be after start time."
-                        return@Button
+
+                    if (!hasError) {
+                        val sMin = DateTimeUtils.timeToMinutes(startTime)
+                        val eMin = DateTimeUtils.timeToMinutes(endTime)
+                        if (eMin <= sMin) {
+                            endTimeError = "End time must be after start time"
+                            validationError = "End time ($endTime) must be after start time ($startTime)."
+                            hasError = true
+                        }
                     }
+
                     val parsedAmount = amountText.toDoubleOrNull()
                     if (parsedAmount == null || parsedAmount < 0) {
-                        validationError = "Please enter a valid booking amount."
-                        return@Button
+                        amountError = "Enter a valid positive number"
+                        if (validationError == null) validationError = "Please enter a valid booking amount."
+                        hasError = true
                     }
+
+                    if (hasError) return@Button
 
                     onSave(
                         bookingToEdit?.id ?: 0L,
@@ -478,9 +567,12 @@ fun BookingDialog(
                         bookingDate.trim(),
                         startTime.trim(),
                         endTime.trim(),
-                        parsedAmount,
-                        isPaid
-                    )
+                        parsedAmount!!,
+                        isPaid,
+                        notes.trim()
+                    ) { serverError ->
+                        validationError = serverError
+                    }
                 },
                 enabled = properties.isNotEmpty(),
                 modifier = Modifier.testTag("save_booking_submit_button")

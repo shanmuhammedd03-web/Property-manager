@@ -108,7 +108,8 @@ object DateTimeUtils {
         startTimeStr: String,
         endTimeStr: String,
         amount: Double,
-        isPaid: Boolean
+        isPaid: Boolean,
+        notes: String = ""
     ) {
         try {
             val dateTimeFormat = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US)
@@ -125,6 +126,9 @@ object DateTimeUtils {
                 append("Time: ").append(startTimeStr).append(" - ").append(endTimeStr).append("\n")
                 append("Amount: $").append(String.format(Locale.US, "%.2f", amount)).append("\n")
                 append("Payment Status: ").append(if (isPaid) "PAID" else "UNPAID")
+                if (notes.isNotBlank()) {
+                    append("\nAdditional Info: ").append(notes)
+                }
             }
 
             val primaryIntent = Intent(Intent.ACTION_INSERT).apply {

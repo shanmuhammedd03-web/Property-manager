@@ -117,7 +117,7 @@ fun MainAppContent(viewModel: PropertyBookingViewModel) {
                 prefillStartTime = null
                 prefillEndTime = null
             },
-            onSave = { bookingId, propertyId, customerName, date, startTime, endTime, amount, isPaid ->
+            onSave = { bookingId, propertyId, customerName, date, startTime, endTime, amount, isPaid, notes, onError ->
                 viewModel.saveBooking(
                     bookingId = bookingId,
                     propertyId = propertyId,
@@ -127,6 +127,8 @@ fun MainAppContent(viewModel: PropertyBookingViewModel) {
                     endTime = endTime,
                     amount = amount,
                     isPaid = isPaid,
+                    notes = notes,
+                    onError = onError,
                     onSuccess = {
                         showBookingDialog = false
                         bookingToEdit = null

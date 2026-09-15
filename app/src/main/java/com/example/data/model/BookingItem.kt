@@ -10,5 +10,6 @@ data class BookingItem(
     val endTime: String,     // "HH:mm"
     val amount: Double,
     val isPaid: Boolean,
+    val notes: String = "",  // optional additional information
     val createdAt: Long
 )

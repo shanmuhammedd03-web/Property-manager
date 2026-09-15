@@ -210,20 +210,28 @@ class PropertyBookingViewModel(
         endTime: String,
         amount: Double,
         isPaid: Boolean,
+        notes: String = "",
+        onError: (String) -> Unit = {},
         onSuccess: () -> Unit
     ) {
         if (propertyId <= 0L) {
-            emitMessage("Please select a valid property")
+            val err = "Please select a valid property"
+            emitMessage(err)
+            onError(err)
             return
         }
         if (customerName.isBlank()) {
-            emitMessage("Customer name cannot be empty")
+            val err = "Customer name cannot be empty"
+            emitMessage(err)
+            onError(err)
             return
         }
         val sMin = DateTimeUtils.timeToMinutes(startTime)
         val eMin = DateTimeUtils.timeToMinutes(endTime)
         if (eMin <= sMin) {
-            emitMessage("End time must be after start time")
+            val err = "End time must be after start time"
+            emitMessage(err)
+            onError(err)
             return
         }
 
@@ -245,6 +253,7 @@ class PropertyBookingViewModel(
                     checkResult.errorMessage ?: "Time slot is already booked"
                 }
                 emitMessage(conflictMsg)
+                onError(conflictMsg)
                 return@launch
             }
 
@@ -256,7 +265,8 @@ class PropertyBookingViewModel(
                 startTime = startTime,
                 endTime = endTime,
                 amount = amount,
-                isPaid = isPaid
+                isPaid = isPaid,
+                notes = notes.trim()
             )
 
             if (bookingId > 0) {

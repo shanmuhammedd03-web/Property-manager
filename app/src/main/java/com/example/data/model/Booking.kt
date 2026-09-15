@@ -27,5 +27,6 @@ data class Booking(
     val endTime: String,     // format "HH:mm"
     val amount: Double,
     val isPaid: Boolean,
+    val notes: String = "",  // optional additional information
     val createdAt: Long = System.currentTimeMillis()
 )
