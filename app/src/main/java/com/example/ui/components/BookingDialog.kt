@@ -25,9 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ErrorOutline
-import androidx.compose.material.icons.filled.KeyboardHide
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -40,7 +38,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
@@ -157,6 +154,81 @@ fun BookingDialog(
         amountError = null
     }
 
+    val executeSave: () -> Unit = {
+        clearErrors()
+        focusManager.clearFocus()
+        keyboardController?.hide()
+
+        var hasError = false
+
+        if (selectedPropertyId <= 0L) {
+            validationError = "Please select a property from the dropdown."
+            hasError = true
+        }
+        if (customerName.isBlank()) {
+            customerNameError = "Customer name is required"
+            if (validationError == null) validationError = "Customer name cannot be empty."
+            hasError = true
+        }
+        if (bookingDate.isBlank()) {
+            dateError = "Booking date is required"
+            if (validationError == null) validationError = "Please enter a valid date (YYYY-MM-DD)."
+            hasError = true
+        } else {
+            val dateRegex = Regex("""^\d{4}-\d{1,2}-\d{1,2}$""")
+            if (!bookingDate.matches(dateRegex)) {
+                dateError = "Format must be YYYY-MM-DD"
+                if (validationError == null) validationError = "Please enter date in YYYY-MM-DD format."
+                hasError = true
+            }
+        }
+
+        val timeRegex = Regex("""^([01]?[0-9]|2[0-3]):[0-5][0-9]$""")
+        if (!startTime.matches(timeRegex)) {
+            startTimeError = "Time must be HH:mm (e.g. 10:00)"
+            if (validationError == null) validationError = "Start time must be in 24-hour HH:mm format."
+            hasError = true
+        }
+        if (!endTime.matches(timeRegex)) {
+            endTimeError = "Time must be HH:mm (e.g. 12:00)"
+            if (validationError == null) validationError = "End time must be in 24-hour HH:mm format."
+            hasError = true
+        }
+
+        if (!hasError) {
+            val sMin = DateTimeUtils.timeToMinutes(startTime)
+            val eMin = DateTimeUtils.timeToMinutes(endTime)
+            if (eMin <= sMin) {
+                endTimeError = "End time must be after start time"
+                validationError = "End time ($endTime) must be after start time ($startTime)."
+                hasError = true
+            }
+        }
+
+        val parsedAmount = amountText.toDoubleOrNull()
+        if (parsedAmount == null || parsedAmount < 0) {
+            amountError = "Enter a valid positive number"
+            if (validationError == null) validationError = "Please enter a valid booking amount."
+            hasError = true
+        }
+
+        if (!hasError) {
+            onSave(
+                bookingToEdit?.id ?: 0L,
+                selectedPropertyId,
+                customerName.trim(),
+                bookingDate.trim(),
+                startTime.trim(),
+                endTime.trim(),
+                parsedAmount!!,
+                isPaid,
+                notes.trim()
+            ) { serverError ->
+                validationError = serverError
+            }
+        }
+    }
+
     // If properties were not loaded yet on open, set when loaded
     LaunchedEffect(properties) {
         if (selectedPropertyId == 0L && properties.isNotEmpty()) {
@@ -212,45 +284,48 @@ fun BookingDialog(
                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
             ) {
                 Column(modifier = Modifier.fillMaxSize()) {
-                    // --- 1. Fixed Dialog Header ---
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 20.dp, end = 8.dp, top = 14.dp, bottom = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    // --- 1. Top Action Bar: Create and Cancel on top side of the keyboard ---
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = if (bookingToEdit == null) "New Booking" else "Edit Booking",
-                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            IconButton(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-                                },
-                                modifier = Modifier.testTag("dialog_hide_keyboard_header_btn")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardHide,
-                                    contentDescription = "Hide Keyboard",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 10.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
                                 onClick = {
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                     onDismiss()
                                 },
-                                modifier = Modifier.testTag("dialog_close_header_btn")
+                                modifier = Modifier.testTag("cancel_booking_dialog_button")
                             ) {
-                                Icon(
-                                    imageVector = Icons.Default.Close,
-                                    contentDescription = "Close",
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                Text(
+                                    text = "Cancel",
+                                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Medium),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            Text(
+                                text = if (bookingToEdit == null) "New Booking" else "Edit Booking",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+
+                            Button(
+                                onClick = executeSave,
+                                enabled = properties.isNotEmpty(),
+                                shape = RoundedCornerShape(10.dp),
+                                modifier = Modifier.testTag("save_booking_submit_button")
+                            ) {
+                                Text(
+                                    text = if (bookingToEdit == null) "Create" else "Save",
+                                    fontWeight = FontWeight.Bold
                                 )
                             }
                         }
@@ -258,7 +333,7 @@ fun BookingDialog(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                    // --- 2. Scrollable Middle Form (Smooth scrolling, resizes above keyboard) ---
+                    // --- 2. Scrollable Middle Form ---
                     Column(
                         modifier = Modifier
                             .weight(1f)
@@ -558,33 +633,12 @@ fun BookingDialog(
 
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        // 7. Additional Information (Optional Text Area) with convenient Hide Keyboard button
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Additional Information (Optional)",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontWeight = FontWeight.SemiBold
-                            )
-                            TextButton(
-                                onClick = {
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-                                },
-                                modifier = Modifier.testTag("hide_keyboard_notes_button")
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.KeyboardHide,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text("Hide Keyboard", style = MaterialTheme.typography.labelSmall)
-                            }
-                        }
+                        // 7. Additional Information (Optional Text Area) - No keyboard hide buttons
+                        Text(
+                            text = "Additional Information (Optional)",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold
+                        )
                         Spacer(modifier = Modifier.height(6.dp))
 
                         OutlinedTextField(
@@ -633,7 +687,7 @@ fun BookingDialog(
 
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
 
-                    // --- 3. Fixed Footer Actions Bar (ALWAYS VISIBLE & ACCESSIBLE) ---
+                    // --- 3. Bottom Actions Bar (Also accessible if scrolled down) ---
                     Surface(
                         color = MaterialTheme.colorScheme.surface,
                         tonalElevation = 2.dp,
@@ -642,7 +696,7 @@ fun BookingDialog(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 20.dp, vertical = 12.dp),
+                                .padding(horizontal = 20.dp, vertical = 10.dp),
                             horizontalArrangement = Arrangement.End,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -651,89 +705,14 @@ fun BookingDialog(
                                     focusManager.clearFocus()
                                     keyboardController?.hide()
                                     onDismiss()
-                                },
-                                modifier = Modifier.testTag("cancel_booking_dialog_button")
+                                }
                             ) {
                                 Text("Cancel")
                             }
                             Spacer(modifier = Modifier.width(10.dp))
                             Button(
-                                onClick = {
-                                    clearErrors()
-                                    focusManager.clearFocus()
-                                    keyboardController?.hide()
-
-                                    var hasError = false
-
-                                    if (selectedPropertyId <= 0L) {
-                                        validationError = "Please select a property from the dropdown."
-                                        hasError = true
-                                    }
-                                    if (customerName.isBlank()) {
-                                        customerNameError = "Customer name is required"
-                                        if (validationError == null) validationError = "Customer name cannot be empty."
-                                        hasError = true
-                                    }
-                                    if (bookingDate.isBlank()) {
-                                        dateError = "Booking date is required"
-                                        if (validationError == null) validationError = "Please enter a valid date (YYYY-MM-DD)."
-                                        hasError = true
-                                    } else {
-                                        val dateRegex = Regex("""^\d{4}-\d{1,2}-\d{1,2}$""")
-                                        if (!bookingDate.matches(dateRegex)) {
-                                            dateError = "Format must be YYYY-MM-DD"
-                                            if (validationError == null) validationError = "Please enter date in YYYY-MM-DD format."
-                                            hasError = true
-                                        }
-                                    }
-
-                                    val timeRegex = Regex("""^([01]?[0-9]|2[0-3]):[0-5][0-9]$""")
-                                    if (!startTime.matches(timeRegex)) {
-                                        startTimeError = "Time must be HH:mm (e.g. 10:00)"
-                                        if (validationError == null) validationError = "Start time must be in 24-hour HH:mm format."
-                                        hasError = true
-                                    }
-                                    if (!endTime.matches(timeRegex)) {
-                                        endTimeError = "Time must be HH:mm (e.g. 12:00)"
-                                        if (validationError == null) validationError = "End time must be in 24-hour HH:mm format."
-                                        hasError = true
-                                    }
-
-                                    if (!hasError) {
-                                        val sMin = DateTimeUtils.timeToMinutes(startTime)
-                                        val eMin = DateTimeUtils.timeToMinutes(endTime)
-                                        if (eMin <= sMin) {
-                                            endTimeError = "End time must be after start time"
-                                            validationError = "End time ($endTime) must be after start time ($startTime)."
-                                            hasError = true
-                                        }
-                                    }
-
-                                    val parsedAmount = amountText.toDoubleOrNull()
-                                    if (parsedAmount == null || parsedAmount < 0) {
-                                        amountError = "Enter a valid positive number"
-                                        if (validationError == null) validationError = "Please enter a valid booking amount."
-                                        hasError = true
-                                    }
-
-                                    if (hasError) return@Button
-
-                                    onSave(
-                                        bookingToEdit?.id ?: 0L,
-                                        selectedPropertyId,
-                                        customerName.trim(),
-                                        bookingDate.trim(),
-                                        startTime.trim(),
-                                        endTime.trim(),
-                                        parsedAmount!!,
-                                        isPaid,
-                                        notes.trim()
-                                    ) { serverError ->
-                                        validationError = serverError
-                                    }
-                                },
-                                enabled = properties.isNotEmpty(),
-                                modifier = Modifier.testTag("save_booking_submit_button")
+                                onClick = executeSave,
+                                enabled = properties.isNotEmpty()
                             ) {
                                 Text(if (bookingToEdit == null) "Create Booking" else "Save Changes")
                             }
