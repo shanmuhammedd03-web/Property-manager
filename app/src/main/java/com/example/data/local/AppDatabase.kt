@@ -7,9 +7,6 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.data.model.Booking
 import com.example.data.model.Property
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 @Database(entities = [Property::class, Booking::class], version = 1, exportSchema = false)
 abstract class AppDatabase : RoomDatabase() {
@@ -26,17 +23,22 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "property_booking.db"
-                ).addCallback(object : RoomDatabase.Callback() {
+                )
+                .fallbackToDestructiveMigration()
+                .addCallback(object : RoomDatabase.Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val dao = getDatabase(context).propertyDao()
-                            dao.insertProperty(Property(name = "Property A", note = "Standard Suite"))
-                            dao.insertProperty(Property(name = "Property B", note = "Deluxe Villa"))
-                            dao.insertProperty(Property(name = "Property C", note = "Executive Studio"))
+                        try {
+                            val now = System.currentTimeMillis()
+                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (1, 'Property A', 'Standard Suite', $now)")
+                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (2, 'Property B', 'Deluxe Villa', $now)")
+                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (3, 'Property C', 'Executive Studio', $now)")
+                        } catch (_: Exception) {
+                            // Non-fatal if initial seed fails
                         }
                     }
-                }).build()
+                })
+                .build()
                 INSTANCE = instance
                 instance
             }

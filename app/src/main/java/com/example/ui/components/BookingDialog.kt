@@ -445,6 +445,20 @@ fun BookingDialog(
                         validationError = "Please enter a valid date (YYYY-MM-DD)."
                         return@Button
                     }
+                    val dateRegex = Regex("""^\d{4}-\d{1,2}-\d{1,2}$""")
+                    if (!bookingDate.matches(dateRegex)) {
+                        validationError = "Please enter date in YYYY-MM-DD format."
+                        return@Button
+                    }
+                    val timeRegex = Regex("""^([01]?[0-9]|2[0-3]):[0-5][0-9]$""")
+                    if (!startTime.matches(timeRegex)) {
+                        validationError = "Start time must be in HH:mm format (e.g. 10:00)."
+                        return@Button
+                    }
+                    if (!endTime.matches(timeRegex)) {
+                        validationError = "End time must be in HH:mm format (e.g. 12:00)."
+                        return@Button
+                    }
                     val sMin = DateTimeUtils.timeToMinutes(startTime)
                     val eMin = DateTimeUtils.timeToMinutes(endTime)
                     if (eMin <= sMin) {
