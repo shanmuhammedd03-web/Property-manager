@@ -287,7 +287,7 @@ fun AvailabilityScreen(
                                     Icon(
                                         imageVector = Icons.Default.CheckCircle,
                                         contentDescription = "Available",
-                                        tint = MaterialTheme.colorScheme.surface,
+                                        tint = androidx.compose.ui.graphics.Color.White,
                                         modifier = Modifier.size(26.dp)
                                     )
                                 }
@@ -297,13 +297,13 @@ fun AvailabilityScreen(
                                         text = "AVAILABLE",
                                         style = MaterialTheme.typography.titleLarge.copy(
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = PaidGreen
+                                            color = androidx.compose.ui.graphics.Color(0xFF14532D)
                                         )
                                     )
                                     Text(
                                         text = "No conflicts found for ${selectedProperty?.name}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = PaidGreen
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = androidx.compose.ui.graphics.Color(0xFF166534)
                                     )
                                 }
                             }
@@ -311,8 +311,8 @@ fun AvailabilityScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Text(
                                 text = "The slot ${DateTimeUtils.formatFriendlyTime(state.startTime)} – ${DateTimeUtils.formatFriendlyTime(state.endTime)} on ${DateTimeUtils.formatFriendlyDate(state.date)} is open for booking.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface
+                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                color = androidx.compose.ui.graphics.Color(0xFF0F172A)
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -320,7 +320,10 @@ fun AvailabilityScreen(
                                 onClick = {
                                     onBookSlot(state.propertyId, state.date, state.startTime, state.endTime)
                                 },
-                                colors = ButtonDefaults.buttonColors(containerColor = PaidGreen),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = PaidGreen,
+                                    contentColor = androidx.compose.ui.graphics.Color.White
+                                ),
                                 shape = RoundedCornerShape(12.dp),
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -354,7 +357,7 @@ fun AvailabilityScreen(
                                     Icon(
                                         imageVector = Icons.Default.Cancel,
                                         contentDescription = "Booked",
-                                        tint = MaterialTheme.colorScheme.surface,
+                                        tint = androidx.compose.ui.graphics.Color.White,
                                         modifier = Modifier.size(26.dp)
                                     )
                                 }
@@ -364,24 +367,27 @@ fun AvailabilityScreen(
                                         text = "BOOKED / UNAVAILABLE",
                                         style = MaterialTheme.typography.titleLarge.copy(
                                             fontWeight = FontWeight.ExtraBold,
-                                            color = UnpaidOrange
+                                            color = androidx.compose.ui.graphics.Color(0xFF7C2D12)
                                         )
                                     )
                                     Text(
                                         text = "Double-booking prevented on ${selectedProperty?.name}",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = UnpaidOrange
+                                        style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+                                        color = androidx.compose.ui.graphics.Color(0xFF9A3412)
                                     )
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(12.dp))
-                            val conflict = result.conflictingBookings.firstOrNull()
+                            val rawConflict = result.conflictingBookings.firstOrNull()
+                            val conflict = rawConflict?.let { c ->
+                                dayBookings.find { it.id == c.id } ?: c
+                            }
                             if (conflict != null) {
                                 Text(
                                     text = "Conflicting Booking:",
                                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                                    color = UnpaidOrange
+                                    color = androidx.compose.ui.graphics.Color(0xFF7C2D12)
                                 )
                                 Spacer(modifier = Modifier.height(4.dp))
                                 Surface(
@@ -394,10 +400,11 @@ fun AvailabilityScreen(
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Column {
+                                        Column(modifier = Modifier.weight(1f)) {
                                             Text(
                                                 text = conflict.customerName,
-                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold)
+                                                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
                                             Text(
                                                 text = "${DateTimeUtils.formatFriendlyTime(conflict.startTime)} - ${DateTimeUtils.formatFriendlyTime(conflict.endTime)}",
@@ -405,18 +412,25 @@ fun AvailabilityScreen(
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-                                        Text(
-                                            text = if (conflict.isPaid) "PAID" else "UNPAID",
-                                            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                                            color = if (conflict.isPaid) PaidGreen else UnpaidOrange
-                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Surface(
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = if (conflict.isPaid) PaidGreenContainer else UnpaidOrangeContainer
+                                        ) {
+                                            Text(
+                                                text = if (conflict.isPaid) "PAID" else "UNPAID",
+                                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                                color = if (conflict.isPaid) PaidGreen else UnpaidOrange,
+                                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                                            )
+                                        }
                                     }
                                 }
                             } else {
                                 Text(
                                     text = result.errorMessage ?: "Time slot is unavailable. Please choose another time.",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = UnpaidOrange
+                                    style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                                    color = androidx.compose.ui.graphics.Color(0xFF7C2D12)
                                 )
                             }
                         }

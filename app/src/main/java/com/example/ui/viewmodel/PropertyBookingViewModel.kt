@@ -158,6 +158,14 @@ class PropertyBookingViewModel(
                 }
             }
         }
+        // Automatically refresh availability check whenever bookings change (e.g. status toggled, edited, deleted)
+        viewModelScope.launch {
+            allBookings.collect {
+                if (_availabilityState.value.propertyId > 0L) {
+                    checkCurrentAvailability()
+                }
+            }
+        }
     }
 
     // Property Actions
@@ -296,6 +304,7 @@ class PropertyBookingViewModel(
             val newStatus = !bookingItem.isPaid
             repository.updatePaymentStatus(bookingItem.id, newStatus)
             emitMessage("Marked as ${if (newStatus) "Paid" else "Unpaid"}")
+            checkCurrentAvailability()
         }
     }
 

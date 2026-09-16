@@ -96,7 +96,7 @@ fun PropertyDialog(
                 }
 
                 Text(
-                    text = "Enter the property name (e.g., Property A, Villa Sun) and optional details.",
+                    text = "Enter the property name (e.g., Sunrise Villa, Deluxe Suite) and optional details.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -106,7 +106,7 @@ fun PropertyDialog(
                     value = name,
                     onValueChange = { name = it },
                     label = { Text("Property Name *") },
-                    placeholder = { Text("e.g., Property A") },
+                    placeholder = { Text("e.g., Sunrise Villa") },
                     isError = isNameError,
                     supportingText = if (isNameError) {
                         { Text("Property name is required", color = MaterialTheme.colorScheme.error) }

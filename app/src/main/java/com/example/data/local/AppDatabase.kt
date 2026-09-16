@@ -24,17 +24,16 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "property_booking.db"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(false)
                 .addCallback(object : RoomDatabase.Callback() {
-                    override fun onCreate(db: SupportSQLiteDatabase) {
-                        super.onCreate(db)
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
                         try {
-                            val now = System.currentTimeMillis()
-                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (1, 'Property A', 'Standard Suite', $now)")
-                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (2, 'Property B', 'Deluxe Villa', $now)")
-                            db.execSQL("INSERT OR IGNORE INTO properties (id, name, note, createdAt) VALUES (3, 'Property C', 'Executive Studio', $now)")
+                            // Remove legacy default seed properties like 'Property A', 'Property B', 'Property C'
+                            db.execSQL("DELETE FROM bookings WHERE propertyId IN (SELECT id FROM properties WHERE name IN ('Property A', 'Property B', 'Property C'))")
+                            db.execSQL("DELETE FROM properties WHERE name IN ('Property A', 'Property B', 'Property C')")
                         } catch (_: Exception) {
-                            // Non-fatal if initial seed fails
+                            // Non-fatal if cleanup fails
                         }
                     }
                 })
